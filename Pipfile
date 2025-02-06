@@ -5,8 +5,20 @@ name = "pypi"
 
 [packages]
 django = "*"
+djangorestframework = "*"
 
 [dev-packages]
+flake8 = "*"
+black = "*"
+isort = "*"
+mypy = "*"
+bandit = "*"
+Pylint ="*"
+pytest = "*"
+pytest-django = "*"
+pip-audit = "*"
+coverage = "*"
+Safety = "*"
 django-stubs = "*"
 
 [requires]

@@ -1,6 +1,6 @@
 from django.db import models
 from users.models import User
-from restorants.models import Dish
+from restaurants.models import Dish
 
 class Order(models.Model):
     """
@@ -64,3 +64,7 @@ class DeliveryOrder(models.Model):
 
     def __str__(self):
         return f"Delivery {self.id} [{self.provider}]"
+
+
+class MyModel(models.Model):
+    pass
