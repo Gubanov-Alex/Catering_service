@@ -1,0 +1,42 @@
+[
+    {
+        "model": "products.DishesOrder",
+        "pk": 1,
+        "fields": {
+            "user": 1,
+            "external_order_id": 1001
+        }
+    },
+    {
+        "model": "products.DishesOrder",
+        "pk": 2,
+        "fields": {
+            "user": 2,
+            "external_order_id": 1002
+        }
+    },
+    {
+        "model": "products.DishesOrder",
+        "pk": 3,
+        "fields": {
+            "user": 3,
+            "external_order_id": 1003
+        }
+    },
+    {
+        "model": "products.DishesOrder",
+        "pk": 4,
+        "fields": {
+            "user": 4,
+            "external_order_id": 1004
+        }
+    },
+    {
+        "model": "products.DishesOrder",
+        "pk": 5,
+        "fields": {
+            "user": 5,
+            "external_order_id": 1005
+        }
+    }
+]

@@ -1,0 +1,84 @@
+[
+    {
+        "model":"products.DishOrderItem",
+         "fields": {
+            "dish": 2,
+            "quantity": 2,
+            "dish_order": 1
+        }
+    },
+    {
+        "model":"products.DishOrderItem",
+        "fields": {
+            "dish": 3,
+            "quantity": 1,
+            "dish_order": 1
+        }
+    },
+    {
+        "model":"products.DishOrderItem",
+        "fields": {
+            "dish": 1,
+            "quantity": 3,
+            "dish_order": 2
+        }
+    },
+    {
+        "model":"products.DishOrderItem",
+        "fields": {
+            "dish": 2,
+            "quantity": 1,
+            "dish_order": 2
+        }
+    },
+    {
+        "model":"products.DishOrderItem",
+        "fields": {
+            "dish": 3,
+            "quantity": 4,
+            "dish_order": 3
+
+        }
+    },
+    {
+        "model":"products.DishOrderItem",
+         "fields": {
+            "dish": 2,
+            "quantity": 2,
+            "dish_order": 3
+        }
+    },
+    {
+        "model":"products.DishOrderItem",
+        "fields": {
+            "dish": 3,
+            "quantity": 1,
+            "dish_order": 4
+        }
+    },
+    {
+        "model":"products.DishOrderItem",
+        "fields": {
+            "dish": 1,
+            "quantity": 3,
+            "dish_order": 4
+
+        }
+    },
+    {
+        "model":"products.DishOrderItem",
+        "fields": {
+            "dish": 2,
+            "quantity": 1,
+            "dish_order": 5
+             }
+    },
+    {
+        "model":"products.DishOrderItem",
+        "fields": {
+            "dish": 3,
+            "quantity": 4,
+            "dish_order": 5
+        }
+    }
+]

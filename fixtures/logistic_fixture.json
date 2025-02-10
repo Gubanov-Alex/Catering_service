@@ -1,0 +1,57 @@
+[
+    {
+        "model": "logistic.DeliveryDishesOrder",
+        "pk": 1,
+        "fields": {
+            "provider": "Uklon",
+            "status": "Ready",
+            "addresses": "Одесса,12",
+            "external_order_id": 2001,
+            "dish_order": 1
+        }
+    },
+    {
+        "model": "logistic.DeliveryDishesOrder",
+        "pk": 2,
+        "fields": {
+            "provider": "Uber",
+            "status": "Ready",
+            "addresses": "Одесса,14",
+            "external_order_id": 2002,
+            "dish_order": 2
+        }
+    },
+    {
+        "model": "logistic.DeliveryDishesOrder",
+        "pk": 3,
+        "fields": {
+            "provider": "Uklon",
+            "status": "Finished",
+            "addresses": "Одесса,21",
+            "external_order_id": 2003,
+            "dish_order": 3
+        }
+    },
+    {
+        "model": "logistic.DeliveryDishesOrder",
+        "pk": 4,
+        "fields": {
+            "provider": "Uklon",
+            "status": "Finished",
+            "addresses": ",Одесса,15",
+            "external_order_id": 2004,
+            "dish_order": 4
+        }
+    },
+    {
+        "model": "logistic.DeliveryDishesOrder",
+        "pk": 5,
+        "fields": {
+            "provider": "Uber",
+            "status": "Finished",
+            "addresses": "Николаев,3",
+            "external_order_id": 2005,
+            "dish_order": 5
+        }
+    }
+]
