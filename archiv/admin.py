@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import DeliveryDishesOrder
+from archiv.models import DeliveryDishesOrder
 
 
 

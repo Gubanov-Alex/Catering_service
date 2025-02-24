@@ -2,10 +2,6 @@ from django.db import models
 from django.conf import settings
 
 
-
-
-
-
 class Restaurant(models.Model):
     """ Restaurant model"""
     class Meta:
@@ -15,8 +11,8 @@ class Restaurant(models.Model):
     name = models.CharField(max_length=100, blank=False, verbose_name= "Название")
     address = models.CharField(max_length=255, blank=False, verbose_name= "Адрес")
 
-    def __str__(self):
-        return self.name
+    def __str__(self) -> str:
+        return f"[{self.pk}] {self.name} {self.address}"
 
 
 class Dish(models.Model):
@@ -34,20 +30,22 @@ class Dish(models.Model):
         blank=False,
     )
 
-    def __str__(self):
-        return self.name
+    def __str__(self) -> str:
+        return f"{self.name} {self.price}  ({self.restaurant})"
 
-    def get_absolute_url(self):
-        return "/placeholder-url/"
 
-class DishesOrder(models.Model):
+
+class Order(models.Model):
     """
     This might represent one "order" of dishes from the user,
     sometimes called the 'cart' or 'basket' before finalization.
     """
     class Meta:
-        db_table = 'dishes_orders'
+        db_table = 'orders'
         verbose_name_plural = 'Накладная заказа'
+
+    status = models.CharField(max_length=20)
+    provider = models.CharField(max_length=20, null=True, blank=True)
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -55,32 +53,42 @@ class DishesOrder(models.Model):
         related_name='dish_orders',
         blank=False
     )
-    external_order_id = models.CharField(max_length=100,unique=True, verbose_name= "Номер Заказа")
+    # external_order_id = models.CharField(max_length=100,unique=True, verbose_name= "Номер Заказа")
 
     def __str__(self):
-        return f"Заказ № {self.external_order_id} ; Клиент: {self.user}"
+        return f"{self.pk} {self.status} for {self.user.email}"
 
 
 class DishOrderItem(models.Model):
     """
-     Intermediate model representing an ordered dish and its quantity.
+    The instance of that class defines a DISH item that is related
+    to an ORDER, that user has made.
+
+     NOTES
+    --------
+
+    do we need user in relations?
+    NOT! because we have it in the ``Order``
     """
+
     class Meta:
         db_table = 'dish_order_items'
         verbose_name_plural = 'Наименования заказа'
 
 
-    dish_order = models.ForeignKey(
-        DishesOrder,
-        on_delete=models.CASCADE,
-        related_name='order_dishes',
-        blank=False
-    )
-    dish = models.ForeignKey(Dish, on_delete=models.CASCADE, blank=False)
-    quantity = models.PositiveIntegerField(default=1, blank=False, verbose_name= "Количество")
+    # dish_order = models.ForeignKey(
+    #     Order,
+    #     on_delete=models.CASCADE,
+    #     related_name='order_dishes',
+    #     blank=False
+    # )
+    quantity = models.PositiveIntegerField(default=1, blank=False, verbose_name="Количество")
+    dish = models.ForeignKey("Dish", on_delete=models.CASCADE, blank=False)
+    order = models.ForeignKey("Order", on_delete=models.CASCADE)
 
-    def __str__(self):
-        return f"{self.quantity} x {self.dish.name} ; Заказ №: {self.dish_order.external_order_id}"
+
+    def __str__(self) -> str:
+        return f"[{self.order.pk}] {self.dish.name}: {self.quantity}"
 
 
 
