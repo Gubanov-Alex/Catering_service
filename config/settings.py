@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 from datetime import timedelta
 from pathlib import Path
 
+from django.core.mail.backends.smtp import EmailBackend
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -95,8 +97,8 @@ DATABASES = {
         "NAME": "catering",
         "USER": "postgres",
         "PASSWORD": "postgres",
-        "HOST": "database",
-        "PORT": "5432",
+        "HOST": "localhost",
+        "PORT": "5435",
     }
 }
 
@@ -178,3 +180,10 @@ SIMPLE_JWT = {
 
 
 AUTH_USER_MODEL = "users.User"
+
+# MAILING SECTION
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "localhost"
+EMAIL_PORT = 1025
+EMAIL_HOST_USER = "mailpit"
+EMAIL_HOST_PASSWORD = "mailpit"

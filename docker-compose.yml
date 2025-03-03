@@ -1,6 +1,9 @@
 services:
   api:
     build: .
+      # for debugging in Docker Container
+    # stdin_open: true
+    # tty: true
     container_name: catering_api
     ports:
       - "8000:8000"
@@ -11,7 +14,7 @@ services:
 
   database:
     image: "postgres:17"
-    container_name: catering_database
+    container_name: catering-database
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -20,6 +23,18 @@ services:
       - "5435:5432"
     volumes:
       - pg_data:/var/lib/postgresql/data
+
+
+  mailing:
+    image: axllent/mailpit
+    container_name: catering-mailing
+    ports:
+      - "8025:8025" # HTTP
+      - "1025:1025" # SMTP
+    environment:
+      MP_MAX_MESSAGES: 100
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
 
 volumes:
   pg_data: {}
