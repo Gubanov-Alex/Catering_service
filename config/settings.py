@@ -47,6 +47,8 @@ INSTALLED_APPS = [
     'products',
     'logistic',
     'users',
+    'shared',
+    'orders',
 ]
 
 MIDDLEWARE = [
@@ -102,7 +104,8 @@ DATABASES = {
     }
 }
 
-
+# Cache
+CACHE_CONNECTION_STRING = "redis://localhost:6379/0"
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators

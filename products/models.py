@@ -46,6 +46,7 @@ class Order(models.Model):
 
     status = models.CharField(max_length=20)
     provider = models.CharField(max_length=20, null=True, blank=True)
+    eta = models.DateField()
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -84,7 +85,7 @@ class DishOrderItem(models.Model):
     # )
     quantity = models.PositiveIntegerField(default=1, blank=False, verbose_name="Количество")
     dish = models.ForeignKey("Dish", on_delete=models.CASCADE, blank=False)
-    order = models.ForeignKey("Order", on_delete=models.CASCADE)
+    order = models.ForeignKey("Order", on_delete=models.CASCADE, related_name='items')
 
 
     def __str__(self) -> str:

@@ -1,15 +1,17 @@
-from enum import StrEnum, auto
+from enum import StrEnum
 
 
 class OrderStatus(StrEnum):
-    NOT_STARTED = auto()
-    COOKING_REJECTED = auto()
-    COOKING = auto()
-    COOKED = auto()
-    DRIVER_LOOKUP = auto()
-    DRIVER_WAITING = auto()
-    DELIVERED = auto()
-    NOT_DELIVERED = auto()
+    NOT_STARTED = "not_started"
+    COOKING_REJECTED = "cooking_rejected"
+    COOKING = "cooking"
+    COOKED = "cooked"
+    DRIVER_LOOKUP = "driver_lookup"
+    DRIVER_WAITING = "driver_waiting"
+    DELIVERED = "delivered"
+    NOT_DELIVERED = "not_delivered"
+    CANCELLED = "cancelled"
+
 
     @classmethod
     def choices(cls):
