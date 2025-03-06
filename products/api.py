@@ -7,82 +7,70 @@ from .models import Dish, DishOrderItem, Order, Restaurant
 from .serializers import DishSerializer, OrderCreateSerializer, RestaurantSerializer, RestaurantWithoutDishesSerializer
 from .enums import OrderStatus
 
+from django.utils.timezone import now
+import json
+from redis import Redis
+from uuid import uuid4
+
+redis_client = Redis()
+
+
+
 # ========== Food =======================
 class FoodAPIViewSet(viewsets.GenericViewSet):
-    # HTTP GET /food/dishes
-    @action(methods=["get"], detail=False)
-    def dishes(self, request):
-        dishes = Dish.objects.all()
-        serializer = DishSerializer(dishes, many=True)
-
-        return Response(data=serializer.data)
-
-    # HTTP POST /food/orders
     @action(methods=["post"], detail=False)
     def orders(self, request: WSGIRequest):
-        """create new order for food.
-
-        HTTP REQUEST EXAMPLE
-        {
-            "food": {
-                1: 3  // id: quantity
-                2: 1  // id: quantity
-            }
-            "eta": TIMESTAMP
-        }
-
-        WORKFLOW
-        1. validate the input
-        2. create ``
+        """
+        Creating a new order for food.
         """
 
         serializer = OrderCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        if not isinstance(serializer.validated_data, dict):
-            raise ValueError(...)
+        data = serializer.validated_data
 
-        # alternatives
-        # -------------
-        # assert isinstance(serializer.validated_data, dict)
+        order_id = uuid4().int % (2 ** 31)
 
-        # from typing import cast
-        # response = cast(dict, serializer.validated_data) | {}
+        order_data = {
+            "id": order_id,
+            "status": OrderStatus.NOT_STARTED,
+            "eta": data["eta"],
+            "user_id": request.user.id,
+            "food": [
+                {
+                    "dish_id": item["dish"].id if isinstance(item["dish"], Dish) else item["dish"],
+                    "quantity": item["quantity"]
+                }
+                for item in data["food"]
+            ],
+        }
 
-        # ACTIVE RECORD
-        # =======================
-        # order = Order(status=OrderStatus.NOT_STARTED, provider=None)
-        # order.save()
+        eta_date = data["eta"]
+        today_date = now().date()
 
-        # ORM
-        # ======================
-        order = Order.objects.create(
-            status=OrderStatus.NOT_STARTED,
-            user=request.user,
-            eta=serializer.validated_data["eta"],
-        )
-        print(f"New Food Order is created: {order.pk}.\nETA: {order.eta}")
-
-        try:
-            dishes_order = serializer.validated_data["food"]
-        except KeyError as error:
-            raise ValueError("Food order is not properly built")
-
-        for dish_order in dishes_order:
-            instance = DishOrderItem.objects.create(
-                dish=dish_order["dish"], quantity=dish_order["quantity"], order=order
+        if eta_date < today_date:
+            return Response(
+                {"error": "Date is out of range"},
+                status=status.HTTP_400_BAD_REQUEST,
             )
-            print(f"New Dish Order Item is created: {instance.pk}")
+
+        order_data["eta"] = order_data["eta"].isoformat()
+
+
+        redis_key = f"order:{order_id}"
+        redis_client.set(redis_key, json.dumps(order_data))
+        print(f"Order {order_id} saved in Redis")
 
         return Response(
             data={
-                "id": order.pk,
-                "status": order.status,
-                "eta": order.eta,
-                "total": 9999,
+                "message": "Order created",
+                "id": order_id,
+                "status": "NOT_STARTED",
             },
             status=status.HTTP_201_CREATED,
         )
+
+
 # =========================================================
 
 # ================== Restaurants ==========================

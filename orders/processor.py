@@ -1,109 +1,25 @@
-from datetime import date
+from datetime import date, timedelta
 from threading import Thread
 from time import sleep
-
-from django.db.models import QuerySet
-
-from redis import Redis
-
-
 import json
-
-from products.models import Order
+from django.db.models import QuerySet
+from redis import Redis
+from products.models import Order, DishOrderItem
 from products.enums import OrderStatus
 
-
-# class Processor:
-# 
-#     EXCLUDE_STATUSES = (
-#         OrderStatus.DELIVERED,
-#         OrderStatus.NOT_DELIVERED,
-#     )
-# 
-#     def __init__(self) -> None:
-#         self._thread = Thread(target=self.process, daemon=True)
-#         print(f"Orders Processor is created")
-# 
-#     @property
-#     def today(self):
-#         return date.today()
-# 
-#     def start(self):
-#         self._thread.start()
-#         print(f"Orders Processor started processing orders")
-# 
-#     def process(self):
-#         """The processing of the orders entrypoint."""
-# 
-#         while True:
-#             self._process()
-#             sleep(2)  # delay
-# 
-#     def _process(self):
-# 
-#         orders: QuerySet[Order] = Order.objects.exclude(
-#             status__in=self.EXCLUDE_STATUSES,
-#         )
-# 
-#         for order in orders:
-#             match order.status:
-#                 case OrderStatus.NOT_STARTED:
-#                     self._process_not_started(order)
-#                 case OrderStatus.COOKING_REJECTED:
-#                     self._process_cooking_rejected()
-#                 case _:
-#                     print(f"Unrecognized order status: {order.status}. passing")
-# 
-#     def _process_not_started(self, order: Order):
-#         """
-#         INPUT DATA
-#         -------------
-#         TODAY: 03.03.2025
-#         ETA:   04.03.2025
-# 
-#         CONDITIONS
-#         --------------
-#         ETA1:   02.03.2025  -> CANCELLED (because deprecated/outdated)
-#         ETA2:   03.03.2025  -> do nothing
-#         ETA3:   04.03.2025  -> COOKING + send API call to restaurants
-#         """
-# 
-#         if order.eta > self.today:
-#             pass
-#         elif order.eta < self.today:
-#             order.status = OrderStatus.CANCELLED
-#             order.save()
-#             print(f"Cancelled order {order}")
-#         else:
-#             # today scenario
-#             order.status = OrderStatus.COOKING
-#             order.save()
-# 
-#             restaurants = set()
-#             for item in order.items.all():
-#                 restaurants.add(item.dish.restaurant)
-# 
-#             print(f"Finished preparing order. Restaurants: {restaurants}")
-#             print(f"Order: {order}")
-# 
-#     def _process_cooking_rejected(self):
-#         raise NotImplementedError
-
-#
 
 class Processor:
     EXCLUDE_STATUSES = (
         OrderStatus.DELIVERED,
         OrderStatus.NOT_DELIVERED,
     )
+    CACHE_KEY = "order"
 
-    # CACHE_KEY = "orders:today"
-    CACHE_KEY = "orders_cache_key"
-
-    def __init__(self) -> None:
-        self.cache = Redis()  # Connection to Redis
+    def __init__(self):
+        self.cache = Redis()
         self._cache_thread = Thread(target=self.cache_updater, daemon=True)
         self._processing_thread = Thread(target=self.orders_processor, daemon=True)
+        self._database_thread = Thread(target=self.orders_to_database, daemon=True)
         print("Orders Processor is created")
 
     @property
@@ -111,159 +27,177 @@ class Processor:
         return date.today()
 
     def start(self):
-        """Start both threads for caching and processing."""
+        """Initiate threads for caching, processing, and database syncing."""
         self._cache_thread.start()
         self._processing_thread.start()
+        self._database_thread.start()
         print("Orders Processor started:")
 
-    def cache_updater(self):
-        """Thread to update the orders cache every 15 minutes."""
-        while True:
-            self._fetch_orders_and_update_cache()
-            sleep(5)  # 15 minutes (900 seconds)
+    def _save_order_to_database(self, order_data):
+        """
+        Save the order along with its associated dishes into the database.
+        """
+        try:
+            # First, create the main order instance
+            order = Order.objects.create(
+                id=order_data["id"],
+                status=order_data["status"],
+                eta=date.fromisoformat(order_data["eta"]),
+                user_id=order_data["user_id"],
+            )
+
+            # Then, prepare and save the related DishOrderItem instances
+            if "food" in order_data:
+                dish_order_items = [
+                    DishOrderItem(
+                        order=order,
+                        dish_id=food_item["dish_id"],
+                        quantity=food_item["quantity"],
+                    )
+                    for food_item in order_data["food"]
+                ]
+                DishOrderItem.objects.bulk_create(dish_order_items)  # Save all items at once
+
+            print(f"Order {order.id} and associated dishes saved to database.")
+
+        except Exception as e:
+            print(f"Error while saving order to database: {e}")
+
+    def _order_exists_in_database(self, order_id):
+        """
+        Check if an order already exists in the database.
+        """
+        from products.models import Order
+        return Order.objects.filter(id=order_id).exists()
 
     def orders_processor(self):
-        """Thread to process orders every 10 seconds."""
+        """
+        Process today's orders directly from Redis.
+        """
         while True:
+            # print('work orders')
             try:
-                self._process()
+                self._process_today_orders()
             except Exception as e:
-                print(f"Error while processing orders: {e}")
-            sleep(5)  # 10 seconds
+                print(f"Error while processing today's orders: {e}")
+            sleep(5)  # Process every 10 seconds
 
-    # def _fetch_orders_and_update_cache(self):
-    #     """Fetch orders from the database and update them in the cache."""
-    #     # Fetch orders excluding certain statuses
-    #     orders: QuerySet[Order] = Order.objects.filter(
-    #         eta=self.today
-    #     ).exclude(
-    #         status__in=self.EXCLUDE_STATUSES,
-    #     )
-    #
-    #     # Convert orders into cache-compatible format (e.g., only ID and status)
-    #     orders_data = [
-    #         {"id": order.id, "status": order.status, "eta": str(order.eta)}
-    #         for order in orders
-    #     ]
-    #
-    #     # Save to Redis
-    #     orders_data_json = json.dumps(orders_data)
-    #     self.cache.set(self.CACHE_KEY, orders_data_json)
-    #
-    #     print(f"Cache updated {self.today}: {orders_data}")
-
-    def _fetch_orders_and_update_cache(self):
+    def cache_updater(self):
         """
-        Updates Redis cache for each individual order to avoid complete rewrites.
+        Thread to monitor Redis and perform actions based on ETA.
         """
-        # Get today's orders
-        orders: QuerySet[Order] = Order.objects.filter(
-            eta=self.today
-        ).exclude(
-            status__in=self.EXCLUDE_STATUSES,
-        )
+        while True:
+            # print( 'Work cashe')
+            redis_keys = self.cache.keys(pattern="order:*")
 
-        # Initialize Redis connection
-        cache = self.cache
+            for redis_key in redis_keys:
+                order_data_json = self.cache.get(redis_key)
+                if not order_data_json:
+                    continue
 
-        # Collect all current order IDs
-        current_order_ids = set()
-        for order in orders:
-            current_order_ids.add(order.id)
+                order_data = json.loads(order_data_json)
+                eta = date.fromisoformat(order_data["eta"])
 
-            # Redis key for this order
-            redis_key = f"{self.CACHE_KEY}:{order.id}"
+                if eta < self.today:
+                    # Reject orders with outdated ETA
+                    self.cache.delete(redis_key)
+                    print(f"Outdated order removed from cache: {order_data}")
 
-            # Store order data
-            order_data = {"id": order.id, "status": order.status, "eta": str(order.eta)}
-            cache.set(redis_key, json.dumps(order_data))
+                elif eta == self.today:
+                    # Ensure today's orders stay in cache, ready for immediate processing
+                    print(f"Valid order for today remains in cache: {order_data}")
 
-        # Identify stale orders (existing in Redis but not in the database)
-        redis_keys = cache.keys(pattern=f"{self.CACHE_KEY}:*")
-        for redis_key in redis_keys:
-            order_id = int(redis_key.decode("utf-8").split(":")[-1])
-            if order_id not in current_order_ids:
-                cache.delete(redis_key)
+                else:
+                    # Leave future orders untouched for future sync
+                    print(f"Future order remains in cache: {order_data}")
+
+            sleep(5)  # Adjusted to poll and refresh data every 30 seconds
+
+    def orders_to_database(self):
+        """
+        Sync future orders from Redis to the database every 10 minutes.
+        """
+        while True:
+            # print('work base')
+            try:
+                redis_keys = self.cache.keys(pattern="order:*")
+
+                for redis_key in redis_keys:
+                    order_data_json = self.cache.get(redis_key)
+                    if not order_data_json:
+                        continue
+
+                    order_data = json.loads(order_data_json)
+                    eta = date.fromisoformat(order_data["eta"])
+
+                    if eta > self.today:
+                        # Save future orders to the database
+                        self._save_order_to_database(order_data)
+                        print(f"Future order synced to database: {order_data}")
+                        self.cache.delete(redis_key)  # Remove successfully synced order
+
+                    elif eta == self.today:
+                        # Ensure today's orders remain in the database
+                        if not self._order_exists_in_database(order_data["id"]):
+                            self._save_order_to_database(order_data)
+                        else:
+                            print(f"Order {order_data['id']} already exists in the database. Skipping save.")
 
 
-    # def _process(self):
-    #     """Process orders from the cache."""
-    #     orders_data_json = self.cache.get(self.CACHE_KEY)  # Read data from Redis
-    #
-    #     if not orders_data_json:
-    #         print("Cache is empty. No orders to process.")
-    #         return
-    #
-    #     orders_data = json.loads(orders_data_json)
-    #
-    #     # Process each order based on its status
-    #     for order_dict in orders_data:
-    #         match order_dict["status"]:
-    #             case OrderStatus.NOT_STARTED:
-    #                 self._process_not_started(order_dict)
-    #             case OrderStatus.COOKING_REJECTED:
-    #                 self._process_cooking_rejected(order_dict)
-    #             case _:
-    #                 print(f"Unknown order status: {order_dict['status']}. Skipping.")
+            except Exception as e:
+                print(f"Error during syncing future orders to database: {e}")
+            sleep(30)  # Run every 10 minutes
 
-    def _process(self):
-        """Process orders from the cache."""
-        redis_keys = self.cache.keys(f"{self.CACHE_KEY}:*")  # Получаем все ключи
-
-        if not redis_keys:
-            print("Cache is empty. No orders to process.")
-            return
-
+    def _process_today_orders(self):
+        """
+        Process orders for today directly from Redis.
+        """
+        redis_keys = self.cache.keys(pattern="order:*")
         for redis_key in redis_keys:
             order_data_json = self.cache.get(redis_key)
             if not order_data_json:
-                continue  # Пропускаем, если ключа нет
-            order_dict = json.loads(order_data_json)
+                continue
 
-            match order_dict["status"]:
-                case OrderStatus.NOT_STARTED:
-                    self._process_not_started(order_dict)
-                case OrderStatus.COOKING_REJECTED:
-                    self._process_cooking_rejected(order_dict)
-                case _:
-                    print(f"Unknown order status: {order_dict['status']}. Skipping.")
+            order_data = json.loads(order_data_json)
+            eta = date.fromisoformat(order_data["eta"])
+
+            if eta == self.today:
+                # Process today's orders
+                if order_data["status"] == OrderStatus.NOT_STARTED:
+                    self._process_not_started(order_data)
+                elif order_data["status"] == OrderStatus.COOKING_REJECTED:
+                    self._process_cooking_rejected(order_data)
+                else:
+                    print(f"Unknown order status: {order_data['status']}. Skipping.")
 
     def _process_not_started(self, order_data):
         """
-        Process an order with the status NOT_STARTED.
-        """
-        eta = date.fromisoformat(order_data["eta"])
-        order = Order.objects.get(id=order_data["id"])  # Retrieve the order object from the database
+            Update NOT_STARTED orders to a new status (e.g., COOKING) directly in Redis.
+            """
+        try:
 
-        if eta > self.today:
-            # Order is scheduled for a future date
-            pass
-        elif eta < self.today:
-            # Cancel outdated orders
-            order.status = OrderStatus.CANCELLED
-            order.save()
-            print(f"Cancelled order: {order}")
-        else:
-            # Scenario for today's date
-            order.status = OrderStatus.COOKING
-            order.save()
+            order_id = order_data["id"]
 
-            # Notify restaurants about the order
-            restaurants = set()
-            for item in order.items.all():
-                restaurants.add(item.dish.restaurant)
 
-            print(f"Order preparation completed. Restaurants: {restaurants}")
-            print(f"Order: {order}")
+            redis_key = f"order:{order_id}"
+            cached_order = self.cache.get(redis_key)
+            if not cached_order:
+                print(f"Order with ID {order_id} not found in cache.")
+                return
+
+
+            order_data["status"] = OrderStatus.COOKING
+            self.cache.set(redis_key, json.dumps(order_data))
+
+            print(f"Order {order_id} updated to status 'COOKING' in cache.")
+        except Exception as e:
+            print(f"Error while processing NOT_STARTED order: {e}")
 
     def _process_cooking_rejected(self, order_data):
         """
-        Process orders with the status COOKING_REJECTED.
+        Handle orders with COOKING_REJECTED status.
         """
-        print(f"Processing order with status: {OrderStatus.COOKING_REJECTED}.")
-        pass
-
-
+        print(f"Order {order_data['id']} status is COOKING_REJECTED.")
 
 
 
