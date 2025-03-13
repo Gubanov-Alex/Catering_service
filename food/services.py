@@ -241,11 +241,11 @@ def _schedule_order(order: Order):
             status=data["status"],
         )
 
+    if Restaurant.MELANGE in order_in_cache.orders:
+        melange_order_processing(order_in_cache, order_instance=order)
 
-    melange_order_processing(order_in_cache, order_instance=order)
-    bueno_order_processing(order_in_cache, order_instance=order)
-
-
+    if Restaurant.BUENO in order_in_cache.orders:
+        bueno_order_processing(order_in_cache, order_instance=order)
 
 
 def schedule_order(order: Order):
