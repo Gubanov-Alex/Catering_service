@@ -110,6 +110,18 @@ class OrderInCache:
             )
 
 
+def update_order_status_if_needed(order_instance: Order):
+    """Check if all restaurant orders have the same status and update main order."""
+    restaurant_orders = OrderExternalIDRestaurant.objects.filter(order=order_instance)
+    unique_statuses = set(restaurant_orders.values_list('status', flat=True))
+
+    if len(unique_statuses) == 1:
+        common_status = unique_statuses.pop()
+        order_instance.status = common_status
+        order_instance.save()
+        print(f"Order {order_instance.id} status updated to {common_status}")
+
+
 # todo: uncomment
 # @celery_app.task
 def melange_order_processing(order: OrderInCache, order_instance=None):
@@ -123,16 +135,15 @@ def melange_order_processing(order: OrderInCache, order_instance=None):
                 payload = {"order": order.orders[Restaurant.MELANGE]["dishes"]}
                 response = httpx.post("http://localhost:8001/api/orders", json=payload)
                 response.raise_for_status()
-
-                # Сохраняем external_id из ответа
                 external_record.external_id = response.json()["id"]
                 external_record.save()
+
             else:
                 response = httpx.get(f"http://localhost:8001/api/orders/{external_record.external_id}")
                 response.raise_for_status()
-
                 external_record.status = response.json()["status"]
                 external_record.save()
+                update_order_status_if_needed(order_instance)
                 print(f"Current status for MELANGE: {external_record.status}. Waiting 1 second")
                 sleep(1)
 
@@ -141,6 +152,7 @@ def melange_order_processing(order: OrderInCache, order_instance=None):
             response.raise_for_status()
             external_record.status = response.json()["status"]
             external_record.save()
+            update_order_status_if_needed(order_instance)
             print(f"Current status for MELANGE: {external_record.status}. Waiting 3 seconds")
             sleep(3)
 
@@ -148,10 +160,12 @@ def melange_order_processing(order: OrderInCache, order_instance=None):
             print(f"🚚 CALLING DELIVERY SERVICE TO PASS THE FOOD ORDER")
             external_record.status = "finished"
             external_record.save()
+            update_order_status_if_needed(order_instance)
             print(f"Order {external_record.external_id} is delivered")
 
         else:
             raise ValueError(f"Status {external_record.status} is not supported")
+
 
 
 # def bueno_order_processing(order: OrderInCache):
@@ -172,15 +186,15 @@ def bueno_order_processing(order: OrderInCache, order_instance=None):
                 payload = {"order": order.orders[Restaurant.BUENO]["dishes"]}
                 response = httpx.post("http://localhost:8002", json=payload)
                 response.raise_for_status()
-
                 external_record.external_id = response.json()["id"]
                 external_record.save()
+
             else:
                 response = httpx.get(f"http://localhost:8002/{external_record.external_id}")
                 response.raise_for_status()
-
                 external_record.status = response.json()["status"]
                 external_record.save()
+                update_order_status_if_needed(order_instance)
                 print(f"Current status for BUENO: {external_record.status}. Waiting 1 second")
                 sleep(1)
 
@@ -189,6 +203,7 @@ def bueno_order_processing(order: OrderInCache, order_instance=None):
             response.raise_for_status()
             external_record.status = response.json()["status"]
             external_record.save()
+            update_order_status_if_needed(order_instance)  # Проверяем статусы
             print(f"Current status for BUENO: {external_record.status}. Waiting 3 seconds")
             sleep(3)
 
@@ -196,10 +211,12 @@ def bueno_order_processing(order: OrderInCache, order_instance=None):
             print(f"🚚 CALLING DELIVERY SERVICE TO PASS THE FOOD ORDER")
             external_record.status = "finished"
             external_record.save()
+            update_order_status_if_needed(order_instance)
             print(f"Order {external_record.external_id} is delivered")
 
         else:
             raise ValueError(f"Status {external_record.status} is not supported")
+
 
 
 # todo: uncomment
