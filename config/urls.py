@@ -20,7 +20,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from users.api import router as users_router
 from users.api import CustomTokenObtainPairView
 
-from products.api import router as food_router
+from food.api import router as food_router
 
 
 urlpatterns = (

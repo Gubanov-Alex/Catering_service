@@ -1,5 +1,5 @@
 from django.db import models
-from products.models import DishesOrder
+from food.models import DishesOrder
 
 PROVIDER_CHOICES = (
     ('Uber', 'Uber'),

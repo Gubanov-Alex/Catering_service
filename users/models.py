@@ -29,8 +29,10 @@ class UserManager(BaseUserManager):
         email = self.normalize_email(email)
         password = make_password(password)
 
+
         extra_fields["is_staff"] = True
         extra_fields["is_superuser"] = True
+        extra_fields["is_active"] = True
         extra_fields["role"] = Role.ADMIN
 
         user = self.model(email=email, password=password, **extra_fields)

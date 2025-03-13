@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.http.response import HttpResponseRedirect
-from .models import Restaurant,Order,DishOrderItem,Dish
+from .models import Restaurant,Order,DishOrderItem,Dish,OrderExternalIDRestaurant
 
 
 class DishInline(admin.TabularInline):
@@ -40,11 +40,19 @@ class DishOrderItemInline(admin.TabularInline):
 @admin.register(Order)
 class DishesOrderAdmin(admin.ModelAdmin):
     inlines = (DishOrderItemInline,)
+    list_display = ('id', 'user', 'get_external_ids')
 
+    def get_external_ids(self, obj):
+        return ", ".join(obj.external_ids.values_list('external_id', flat=True))
+
+    get_external_ids.short_description = "External IDs"
 
 
 admin.site.add_action(import_csv)
 
+@admin.register(OrderExternalIDRestaurant)
+class OrderExternalIDAdmin(admin.ModelAdmin):
+    list_display = ("id", "order", "restaurant", "external_id","status")
 
 # @admin.register(DishOrderItem)
 # class DishOrderItemAdmin(admin.ModelAdmin):

@@ -2,10 +2,8 @@
 # def create_activation_key(email: str):
 #     raise NotImplementedError
 
-
 # def send_user_activation_email(email: str, activation_key: str):
 #     raise NotImplementedError
-
 
 # if class approach
 
@@ -13,6 +11,7 @@
 import uuid
 from django.core.mail import send_mail
 from django.contrib.auth import get_user_model
+from config import celery_app
 
 from shared.cache import CacheService
 
@@ -20,6 +19,14 @@ from shared.cache import CacheService
 User = get_user_model()
 CACHE: dict[uuid.UUID, dict] = {}
 
+@celery_app.task
+def send_activation_mail(email: str, activation_link: str):
+    send_mail(
+        subject="User activation",
+        message=f"Please, activate your account: {activation_link}",
+        from_email="admin@catering.support.com",
+        recipient_list=[email],
+    )
 
 class Activator:
     UUID_NAMESPACE = uuid.uuid4()
@@ -37,18 +44,11 @@ class Activator:
 
     def send_user_activation_email(self, activation_key: uuid.UUID):
         link = f"https://frontend.com/users/activation/{activation_key}"
-        self.send_activation_mail(activation_link=link)
-
-    def send_activation_mail(self, activation_link: str):
         if self.email is None:
-            raise ValueError("Email is not specified to send the Email")
+            raise ValueError("Email is not specified for activation email sending")
         else:
-            send_mail(
-                subject="User activation",
-                message=f"Please, activate your accout: {activation_link}",
-                from_email="admin@catering.support.com",
-                recipient_list=[self.email],
-            )
+           send_activation_mail.delay(email=self.email,activation_link=link)
+
 
     def save_activation_information(self, user_id: int, activation_key: uuid.UUID):
         """Save activation information to the cache.
