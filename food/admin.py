@@ -1,18 +1,9 @@
 from django.contrib import admin
 from django.http.response import HttpResponseRedirect
-from .models import Restaurant,Order,DishOrderItem,Dish,OrderExternalIDRestaurant
 
+from .models import Dish, DishOrderItem, Order, Restaurant
 
-class DishInline(admin.TabularInline):
-    model = Dish
-    extra = 5
-
-
-@admin.register(Restaurant)
-class RestaurantAdmin(admin.ModelAdmin):
-    list_display = ('name','address',)
-    search_fields = ('name',)
-    inlines = [DishInline]
+admin.site.register(Restaurant)
 
 
 def import_csv(self, request, queryset):
@@ -20,16 +11,13 @@ def import_csv(self, request, queryset):
     return HttpResponseRedirect("/import-dishes")
 
 
+# admin.site.register(Dish)
 @admin.register(Dish)
 class DishAdmin(admin.ModelAdmin):
-    list_display = ('name', 'price','get_restaurant_name')
-    search_fields = ('name',)
+    list_display = ("id", "name", "price", "restaurant")
+    search_fields = ("name",)
     list_filter = ("name", "restaurant")
-    actions = ["import_csv"]
-
-    def get_restaurant_name(self, obj):
-        return obj.restaurant.name
-    get_restaurant_name.short_description = 'Ресторан'
+    actionss = ["import_csv"]
 
 
 # admin.site.register(DishOrderItem)
@@ -39,49 +27,8 @@ class DishOrderItemInline(admin.TabularInline):
 
 @admin.register(Order)
 class DishesOrderAdmin(admin.ModelAdmin):
+    list_display = ("__str__", "id", "status","external_order_id_melange", "external_order_id_bueno")
     inlines = (DishOrderItemInline,)
-    list_display = ('id', 'user', 'get_external_ids')
-
-    def get_external_ids(self, obj):
-        return ", ".join(obj.external_ids.values_list('external_id', flat=True))
-
-    get_external_ids.short_description = "External IDs"
 
 
 admin.site.add_action(import_csv)
-
-@admin.register(OrderExternalIDRestaurant)
-class OrderExternalIDAdmin(admin.ModelAdmin):
-    list_display = ("id", "order", "restaurant", "external_id","status")
-
-# @admin.register(DishOrderItem)
-# class DishOrderItemAdmin(admin.ModelAdmin):
-#     list_display = ('get_dish_order_id','get_dish_name', 'quantity')
-#     search_fields = ('dish__name',)
-#
-#     def get_dish_name(self, obj):
-#         return obj.dish.name
-#     get_dish_name.short_description = 'Ястие'
-#
-#     def get_dish_order_id(self, obj):
-#         return obj.dish_order.external_order_id
-#     get_dish_order_id.short_description = 'Номер Заказа'
-
-
-
-
-# @admin.register(DishesOrder)
-# class DishesOrderAdmin(admin.ModelAdmin):
-#     list_display = ('get_user', 'external_order_id')
-#
-#     def get_user(self, obj):
-#         return obj.user.username
-#
-#     get_user.short_description = 'Клиент'
-#
-#
-#
-# @admin.register(Restaurant)
-# class RestaurantAdmin(admin.ModelAdmin):
-#     list_display = ('name', 'address')
-#     search_fields = ('name',)

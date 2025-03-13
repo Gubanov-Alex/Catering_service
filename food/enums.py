@@ -16,6 +16,7 @@ class OrderStatus(StrEnum):
     DELIVERED = auto()  # delivered
     NOT_DELIVERED = auto()  # not_delivered
     CANCELLED = auto()
+    Finished = auto()
 
     @classmethod
     def choices(cls):

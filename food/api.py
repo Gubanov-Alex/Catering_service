@@ -1,13 +1,46 @@
+import json
+
 from celery.result import AsyncResult
 from django.core.handlers.wsgi import WSGIRequest
+from django.db import transaction
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework import routers, status, viewsets
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view
 from rest_framework.response import Response
 
+from shared.cache import CacheService
 from .enums import OrderStatus
 from .models import Dish, DishOrderItem, Order
 from .serializers import DishSerializer, OrderCreateSerializer
 from .services import schedule_order
+
+
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+
+
+
+
+@csrf_exempt
+def bueno_webhook(request):
+    data: dict = json.loads(json.dumps(request.POST))
+
+    cache = CacheService()
+    _order: dict = cache.get("orders", data["id"])
+
+    _order.update(
+                {
+                    "status": data["status"],
+                    "external_id": data["id"],
+                }
+            )
+    cache.set("orders", data["id"], _order)
+
+    return JsonResponse({"message": "ok"})
 
 
 class FoodAPIViewSet(viewsets.GenericViewSet):
@@ -20,7 +53,8 @@ class FoodAPIViewSet(viewsets.GenericViewSet):
         return Response(data=serializer.data)
 
     # HTTP POST /food/orders
-    @action(methods=["post"], detail=False)
+    # @transaction.non_atomic_requests
+    @action(methods=["post", "get"], detail=False)
     def orders(self, request: WSGIRequest):
         """create new order for food.
 

@@ -9,7 +9,7 @@ Catering Service is a web application designed for managing restaurant operation
     - Manage restaurants and their associated dishes.
     - Handle orders and external order IDs.
 
-- **Potential External System Integration**: Supported through the `OrderExternalIDRestaurant` model.
+- **Potential External System Integration**: Supported through the `RestaurantOrderID` model.
 
 ## Technologies Used
 ### Core Libraries

@@ -6,6 +6,9 @@ CACHE PROPERTIES:
 """
 
 import json
+from dataclasses import asdict, dataclass
+from typing import Any
+
 import redis
 from django.conf import settings
 
@@ -20,10 +23,17 @@ class CacheService:
     def _build_key(namespace: str, key: str):
         return f"{namespace}:{key}"
 
-    def set(self, namespace: str, key: str, instance: dict, ttl: int | None = 259200):
-        payload: str = json.dumps(instance)
-        self.connection.set(name=self._build_key(namespace, key), value=payload, ex=ttl)
+    def set(
+        self, namespace: str, key: Any, instance: dict | Any, ttl: int | None = 259200
+    ):
+        if not isinstance(instance, dict):
+            instance = asdict(instance)
 
-    def get(self, namespace: str, key: str) -> dict:
-        result: str = self.connection.get(self._build_key(namespace, key))  # type: ignore
+        payload: str = json.dumps(instance)
+        self.connection.set(
+            name=self._build_key(namespace, str(key)), value=payload, ex=ttl
+        )
+
+    def get(self, namespace: str, key: Any) -> dict:
+        result: str = self.connection.get(self._build_key(namespace, str(key)))  # type: ignore
         return json.loads(result)

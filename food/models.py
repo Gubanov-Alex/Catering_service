@@ -1,10 +1,14 @@
+from typing import Literal
+
 from django.conf import settings
 from django.db import models
 
+from .constants import RESTAURANT_TO_INTERNAL_STATUSES
+from .enums import OrderStatus
+from .enums import Restaurant as RestaurantEnum
+
 
 class Restaurant(models.Model):
-    choices = None
-
     class Meta:
         db_table = "restaurants"
 
@@ -33,44 +37,66 @@ class Order(models.Model):
     external restaurant that is available in the system.
 
     dishes in plural.
+
+    ARGS
+    -- Idea:
+    restaurants_meta: dict = {
+        "provider": {
+            "order_id": string,
+            "order_status": string,
+            "dishes": [
+                {
+                    "dish": string,
+                    "quantity": number,
+                }, ...
+            ]
+        }
+
+    }
     """
 
     class Meta:
         db_table = "orders"
 
-    status = models.CharField(max_length=20,default='new')
+    status = models.CharField(max_length=20)
     provider = models.CharField(max_length=20, null=True, blank=True)
     eta = models.DateField()
+    external_order_id_melange = models.CharField(max_length=100, null=True, blank=True)
+    external_order_id_bueno = models.CharField(max_length=100, null=True, blank=True)
+
+    # restaurants_meta = models.JSONField()
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
     )
-    external_id = models.CharField(max_length=100, null=True, blank=True)
 
     def __str__(self) -> str:
-        return f"{self.pk} for {self.user.email}"
+        return f"{self.pk} {self.status} for {self.user.email}"
 
     def __repr__(self) -> str:
         return super().__str__()
 
-class OrderExternalIDRestaurant(models.Model):
-    """The external ID for a particular restaurant tied to an order."""
-
-    class Meta:
-        db_table = "order_external_ids"
-
-    order = models.ForeignKey(
-        Order,
-        related_name="external_ids",
-        on_delete=models.CASCADE,
-    )
-    restaurant = models.CharField(max_length=100)  # Имя ресторана
-    external_id = models.CharField(max_length=100)  # Внешний ID заказа из API ресторана
-    status = models.CharField(max_length=20, default="not_started")  # Статус заказа
-
-    def __str__(self) -> str:
-        return f"External ID {self.external_id} for restaurant {self.restaurant}"
+    @classmethod
+    def update_from_provider_status(cls, id_: int, status: str, delivery=False) -> None:
+        if delivery is False:
+            if status == "finished":
+                cls.objects.filter(id=id_).update(status=OrderStatus.DRIVER_LOOKUP)
+            else:
+                cls.objects.filter(id=id_).update(
+                    status=RESTAURANT_TO_INTERNAL_STATUSES[RestaurantEnum.MELANGE][
+                        status
+                    ]
+                )
+        else:
+            if status == "delivered":
+                cls.objects.filter(id=id_).update(status=OrderStatus.DELIVERED)
+            elif status == "delivery":
+                cls.objects.filter(id=id_).update(status=OrderStatus.DELIVERY)
+            elif status == "delivered":
+                cls.objects.filter(id=id_).update(status=OrderStatus.DELIVERED)
+            else:
+                raise ValueError(f"Status {status} is not supported")
 
 
 class DishOrderItem(models.Model):
@@ -95,5 +121,3 @@ class DishOrderItem(models.Model):
 
     def __str__(self) -> str:
         return f"[{self.order.pk}] {self.dish.name}: {self.quantity}"
-
-
