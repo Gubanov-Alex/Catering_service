@@ -54,7 +54,7 @@ class Order(models.Model):
     def __repr__(self) -> str:
         return super().__str__()
 
-class OrderExternalIDRestaurant(models.Model):
+class RestaurantOrderID(models.Model):
     """The external ID for a particular restaurant tied to an order."""
 
     class Meta:

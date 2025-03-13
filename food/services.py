@@ -63,7 +63,7 @@ import uuid
 
 import httpx
 from shared.cache import CacheService
-from .models import DishOrderItem, Order, OrderExternalIDRestaurant
+from .models import DishOrderItem, Order, RestaurantOrderID
 from .enums import Restaurant
 from config import celery_app
 
@@ -112,7 +112,7 @@ class OrderInCache:
 
 def update_order_status_if_needed(order_instance: Order):
     """Check if all restaurant orders have the same status and update main order."""
-    restaurant_orders = OrderExternalIDRestaurant.objects.filter(order=order_instance)
+    restaurant_orders = RestaurantOrderID.objects.filter(order=order_instance)
     unique_statuses = set(restaurant_orders.values_list('status', flat=True))
 
     if len(unique_statuses) == 1:
@@ -125,46 +125,46 @@ def update_order_status_if_needed(order_instance: Order):
 # todo: uncomment
 # @celery_app.task
 def melange_order_processing(order: OrderInCache, order_instance=None):
-    external_record = OrderExternalIDRestaurant.objects.get(
+    restaurant_orders = RestaurantOrderID.objects.get(
         order=order_instance, restaurant=Restaurant.MELANGE
     )
 
-    while external_record.status != "finished":
-        if external_record.status == "not_started":
-            if not external_record.external_id:
+    while restaurant_orders.status != "finished":
+        if restaurant_orders.status == "not_started":
+            if not restaurant_orders.external_id:
                 payload = {"order": order.orders[Restaurant.MELANGE]["dishes"]}
                 response = httpx.post("http://localhost:8001/api/orders", json=payload)
                 response.raise_for_status()
-                external_record.external_id = response.json()["id"]
-                external_record.save()
+                restaurant_orders.external_id = response.json()["id"]
+                restaurant_orders.save()
 
             else:
-                response = httpx.get(f"http://localhost:8001/api/orders/{external_record.external_id}")
+                response = httpx.get(f"http://localhost:8001/api/orders/{restaurant_orders.external_id}")
                 response.raise_for_status()
-                external_record.status = response.json()["status"]
-                external_record.save()
+                restaurant_orders.status = response.json()["status"]
+                restaurant_orders.save()
                 update_order_status_if_needed(order_instance)
-                print(f"Current status for MELANGE: {external_record.status}. Waiting 1 second")
+                print(f"Current status for MELANGE: {restaurant_orders.status}. Waiting 1 second")
                 sleep(1)
 
-        elif external_record.status == "cooking":
-            response = httpx.get(f"http://localhost:8001/api/orders/{external_record.external_id}")
+        elif restaurant_orders.status == "cooking":
+            response = httpx.get(f"http://localhost:8001/api/orders/{restaurant_orders.external_id}")
             response.raise_for_status()
-            external_record.status = response.json()["status"]
-            external_record.save()
+            restaurant_orders.status = response.json()["status"]
+            restaurant_orders.save()
             update_order_status_if_needed(order_instance)
-            print(f"Current status for MELANGE: {external_record.status}. Waiting 3 seconds")
+            print(f"Current status for MELANGE: {restaurant_orders.status}. Waiting 3 seconds")
             sleep(3)
 
-        elif external_record.status == "cooked":
+        elif restaurant_orders.status == "cooked":
             print(f"🚚 CALLING DELIVERY SERVICE TO PASS THE FOOD ORDER")
-            external_record.status = "finished"
-            external_record.save()
+            restaurant_orders.status = "finished"
+            restaurant_orders.save()
             update_order_status_if_needed(order_instance)
-            print(f"Order {external_record.external_id} is delivered")
+            print(f"Order {restaurant_orders.external_id} is delivered")
 
         else:
-            raise ValueError(f"Status {external_record.status} is not supported")
+            raise ValueError(f"Status {restaurant_orders.status} is not supported")
 
 
 
@@ -176,46 +176,46 @@ def melange_order_processing(order: OrderInCache, order_instance=None):
 # todo: uncomment
 # @celery_app.task
 def bueno_order_processing(order: OrderInCache, order_instance=None):
-    external_record = OrderExternalIDRestaurant.objects.filter(
+    restaurant_orders = RestaurantOrderID.objects.filter(
         order=order_instance, restaurant=Restaurant.BUENO
     ).first()
 
-    while external_record.status != "finished":
-        if external_record.status == "not_started":
-            if not external_record.external_id:
+    while restaurant_orders.status != "finished":
+        if restaurant_orders.status == "not_started":
+            if not restaurant_orders.external_id:
                 payload = {"order": order.orders[Restaurant.BUENO]["dishes"]}
                 response = httpx.post("http://localhost:8002", json=payload)
                 response.raise_for_status()
-                external_record.external_id = response.json()["id"]
-                external_record.save()
+                restaurant_orders.external_id = response.json()["id"]
+                restaurant_orders.save()
 
             else:
-                response = httpx.get(f"http://localhost:8002/{external_record.external_id}")
+                response = httpx.get(f"http://localhost:8002/{restaurant_orders.external_id}")
                 response.raise_for_status()
-                external_record.status = response.json()["status"]
-                external_record.save()
+                restaurant_orders.status = response.json()["status"]
+                restaurant_orders.save()
                 update_order_status_if_needed(order_instance)
-                print(f"Current status for BUENO: {external_record.status}. Waiting 1 second")
+                print(f"Current status for BUENO: {restaurant_orders.status}. Waiting 1 second")
                 sleep(1)
 
-        elif external_record.status == "cooking":
-            response = httpx.get(f"http://localhost:8002/{external_record.external_id}")
+        elif restaurant_orders.status == "cooking":
+            response = httpx.get(f"http://localhost:8002/{restaurant_orders.external_id}")
             response.raise_for_status()
-            external_record.status = response.json()["status"]
-            external_record.save()
+            restaurant_orders.status = response.json()["status"]
+            restaurant_orders.save()
             update_order_status_if_needed(order_instance)  # Проверяем статусы
-            print(f"Current status for BUENO: {external_record.status}. Waiting 3 seconds")
+            print(f"Current status for BUENO: {restaurant_orders.status}. Waiting 3 seconds")
             sleep(3)
 
-        elif external_record.status == "cooked":
+        elif restaurant_orders.status == "cooked":
             print(f"🚚 CALLING DELIVERY SERVICE TO PASS THE FOOD ORDER")
-            external_record.status = "finished"
-            external_record.save()
+            restaurant_orders.status = "finished"
+            restaurant_orders.save()
             update_order_status_if_needed(order_instance)
-            print(f"Order {external_record.external_id} is delivered")
+            print(f"Order {restaurant_orders.external_id} is delivered")
 
         else:
-            raise ValueError(f"Status {external_record.status} is not supported")
+            raise ValueError(f"Status {restaurant_orders.status} is not supported")
 
 
 
@@ -251,7 +251,7 @@ def _schedule_order(order: Order):
     )
 
     for restaurant, data in order_in_cache.orders.items():
-        OrderExternalIDRestaurant.objects.create(
+        RestaurantOrderID.objects.create(
             order=order,
             restaurant=restaurant,
             external_id="",
