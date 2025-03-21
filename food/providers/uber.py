@@ -27,8 +27,7 @@ class OrderResponse:
 
 
 class Provider:
-    BASE_URL = "http://localhost:8003/drivers/orders"
-
+    BASE_URL = "http://localhost:8004/drivers/orders"
 
 
     @classmethod

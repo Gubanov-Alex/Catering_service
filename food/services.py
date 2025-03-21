@@ -3,13 +3,14 @@ from dataclasses import dataclass, field
 from datetime import date, datetime, time
 from time import sleep
 from typing import Any
+import random
 
 from config import celery_app
 from shared.cache import CacheService
 
 from .enums import OrderStatus, Restaurant
 from .models import DishOrderItem, Order
-from .providers import bueno, melange, uklon
+from .providers import bueno, melange, uklon, uber
 
 
 @dataclass
@@ -217,7 +218,17 @@ def delivery_order(internal_order_id: int):
 def _delivery_order_task(internal_order_id: int):
     """Using random provider - start processing delivery orders."""
 
-    provider = uklon.Provider()
+
+    providers = [uklon.Provider, uber.Provider]
+    provider_mark = random.choice(providers)
+    if provider_mark == uklon.Provider:
+        provider_name = uklon
+    elif provider_mark == uber.Provider:
+        provider_name = uber
+    else:
+        raise ValueError("Unknown provider")
+
+
     cache = CacheService()
 
     addresses: list[str] = []
@@ -229,19 +240,24 @@ def _delivery_order_task(internal_order_id: int):
         addresses.append(rest["address"])
         comments.append(f"ORDER: {rest['external_id']}")
 
-    _response: uklon.OrderResponse = provider.create_order(
-        uklon.OrderRequestBody(addresses=addresses, comments=comments)
-    )
+    _response: provider_name.OrderResponse = provider_mark.create_order(
+                provider_name.OrderRequestBody(addresses=addresses, comments=comments)
+            )
 
     order_in_cache.location = _response.location
 
-    current_status: uklon.OrderStatus = uklon.OrderStatus.NOT_STARTED
-    while current_status != uklon.OrderStatus.DELIVERED:
-        response: uklon.OrderResponse = provider.get_order(_response.id)
+    current_status = provider_name.OrderStatus.NOT_STARTED
+    while current_status != provider_name.OrderStatus.DELIVERED:
+        response = provider_mark.get_order(_response.id)
 
-        print(f"🚙 UKLON [{response.status}]: 📍 {response.location}")
+
+        if provider_name == uber:
+            print(f"🚙 PROVIDER UBER  [{response.status}]: 📍 {response.location}")
+        elif provider_name == uklon:
+            print(f"🚙 PROVIDER UKLON [{response.status}]: 📍 {response.location}")
+
         if current_status == response.status:
-            sleep(1)
+            sleep(4)
             continue
 
         current_status = response.status  # DELIVERY, DELIVERED
@@ -255,9 +271,10 @@ def _delivery_order_task(internal_order_id: int):
 
     # update cache
     for rest in order_in_cache.restaurants.values():
-        rest["status"] = uklon.OrderStatus.DELIVERED
+        rest["status"] = provider_name.OrderStatus.DELIVERED
 
     cache.set("orders", internal_order_id, order_in_cache)
+
 
 
 @celery_app.task
