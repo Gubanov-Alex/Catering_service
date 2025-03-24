@@ -13,6 +13,7 @@ RUN apt-get update -y \
     && apt-get autoremove -y \
     && rm -rf /var/lib/apt/lists/*
 
+RUN pip install --upgrade pip setuptools pipenv watchdog
 
 COPY Pipfile .
 COPY Pipfile.lock .
@@ -21,5 +22,6 @@ RUN pipenv install --system --deploy
 # copy the project
 COPY ./ ./
 
-
+EXPOSE 8000
+ENTRYPOINT ["python"]
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]

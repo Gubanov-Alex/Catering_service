@@ -17,6 +17,7 @@ redis = "~=5.2.1"
 celery = { version = "==5.4.0", extras = ["redis"]}
 django-grappelli = "*"
 psycopg2-binary = "~=2.9.10"
+httpx = "*"
 
 [dev-packages]
 flake8 = ">=6.1,<7.0"
@@ -33,7 +34,6 @@ django-stubs = ">=4.2.0,<5.0"
 celery-types = "*"
 fastapi = "*"
 pydantic = "*"
-httpx = "*"
 uvicorn = "*"
 
 [requires]

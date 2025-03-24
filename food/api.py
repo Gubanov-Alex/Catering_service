@@ -54,7 +54,7 @@ class FoodAPIViewSet(viewsets.GenericViewSet):
 
     # HTTP POST /food/orders
     # @transaction.non_atomic_requests
-    @action(methods=["post", "get"], detail=False)
+    @action(methods=["post"], detail=False)
     def orders(self, request: WSGIRequest):
         """create new order for food.
 
@@ -107,6 +107,16 @@ class FoodAPIViewSet(viewsets.GenericViewSet):
             },
             status=status.HTTP_201_CREATED,
         )
+
+        # HTTP POST /food/orders/<ID>
+    @action(methods=["get"], detail=False, url_path=r"orders/(?P<id>\d+)")
+    def order_retrieve(self, request: WSGIRequest, id: int):
+        order: Order = Order.objects.get(id=id)
+        cache = CacheService()
+
+        order_in_cache = cache.get("orders", order.pk)
+
+        return Response(data=order_in_cache)
 
 
 router = routers.DefaultRouter()

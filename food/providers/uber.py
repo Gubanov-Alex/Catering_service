@@ -3,6 +3,8 @@ from dataclasses import asdict, dataclass
 
 import httpx
 
+from config.settings import UBER_BASE_URL
+
 
 class OrderStatus(enum.StrEnum):
     NOT_STARTED = "not started"
@@ -27,7 +29,7 @@ class OrderResponse:
 
 
 class Provider:
-    BASE_URL = "http://localhost:8004/drivers/orders"
+    BASE_URL = UBER_BASE_URL
 
 
     @classmethod

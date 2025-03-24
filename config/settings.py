@@ -11,7 +11,9 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 from datetime import timedelta
 from pathlib import Path
+from os import getenv
 
+from django.conf.global_settings import EMAIL_BACKEND
 from django.core.mail.backends.smtp import EmailBackend
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -22,10 +24,19 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-%463q=068%_nf)pb0mtw!s*rephikrbrv0bgonmv+1n6tgmh(n'
+# SECRET_KEY = 'django-insecure-%463q=068%_nf)pb0mtw!s*rephikrbrv0bgonmv+1n6tgmh(n'
+SECRET_KEY = getenv(
+    "SECRET_KEY",
+    default="django-insecure-%463q=068%_nf)pb0mtw!s*rephikrbrv0bgonmv+1n6tgmh(n",
+)
+
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# DEBUG = True
+DEBUG: bool = (
+    True if getenv("DEBUG", "false").lower() in ("true", "1", "on", "yes") else False
+)
+
 
 ALLOWED_HOSTS = ["*"]
 
@@ -92,19 +103,35 @@ WSGI_APPLICATION = 'config.wsgi.application'
 #     }
 # }
 
+# DATABASES = {
+#     "default": {
+#         "ENGINE": "django.db.backends.postgresql",
+#         "NAME": "catering",
+#         "USER": "postgres",
+#         "PASSWORD": "postgres",
+#         "HOST": "localhost",
+#         "PORT": "5435",
+#     }
+# }
+
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": "catering",
-        "USER": "postgres",
-        "PASSWORD": "postgres",
-        "HOST": "localhost",
-        "PORT": "5435",
+        "NAME": getenv("DATABASE_NAME", "catering"),
+        "USER": getenv("DATABASE_USER", "postgres"),
+        "PASSWORD": getenv("DATABASE_PASSWORD", "postgres"),
+        "HOST": getenv("DATABASE_HOST", "localhost"),
+        "PORT": getenv("DATABASE_PORT", 5435),
+        # "ATOMIC_REQUESTS": False,
     }
 }
 
+
 # Cache
-CACHE_CONNECTION_STRING = "redis://localhost:6379/0"
+# CACHE_CONNECTION_STRING = "redis://localhost:6379/0"
+CACHE_CONNECTION_STRING = getenv("CACHE_URL", default="redis://localhost:6379/0")
+
+
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
@@ -172,8 +199,10 @@ REST_FRAMEWORK = {
 # client -> token -> request
 # server -> validated token -> user by identifier -> process request -> response
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+    # "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
+    # "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+    "ACCESS_TOKEN_LIFETIME":getenv("ACCESS_TOKEN_LIFETIME",default=timedelta(minutes=60)),
+    "REFRESH_TOKEN_LIFETIME": getenv("REFRESH_TOKEN_LIFETIME",default=timedelta(days=1)),
     "UPDATE_LAST_LOGIN": False,
     "ALGORITHM": "HS256",
     "SIGNING_KEY": SECRET_KEY,
@@ -184,15 +213,31 @@ SIMPLE_JWT = {
 AUTH_USER_MODEL = "users.User"
 
 # MAILING SECTION
-EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-EMAIL_HOST = "localhost"
-EMAIL_PORT = 1025
-EMAIL_HOST_USER = "mailpit"
-EMAIL_HOST_PASSWORD = "mailpit"
+# EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+# EMAIL_HOST = "localhost"
+# EMAIL_PORT = 1025
+# EMAIL_HOST_USER = "mailpit"
+# EMAIL_HOST_PASSWORD = "mailpit"
+
+EMAIL_BACKEND = getenv("EMAIL_BACKEND",default="django.core.mail.backends.smtp.EmailBackend")
+EMAIL_HOST = getenv("EMAIL_HOST",default="localhost")
+EMAIL_PORT = getenv("EMAIL_PORT",default=1025)
+EMAIL_HOST_USER = getenv("EMAIL_HOST_USER",default="mailpit")
+EMAIL_HOST_PASSWORD = getenv("EMAIL_HOST_PASSWORD",default="mailpit")
+
+
 
 # CELERY SECTION
 # settings ref: https://docs.celeryq.dev/en/stable/userguide/configuration.html
-CELERY_BROKER_URL = "redis://localhost:6380/0"
+CELERY_BROKER_URL = getenv("BROKER_URL", default="redis://localhost:6380/0")
+# CELERY_BROKER_URL = "redis://localhost:6380/0"
 CELERY_ACCEPT_CONTENT = ["pickle", "application/json", "application/x-python-serialize"]
 CELERY_TASK_SERIALIZER = "pickle"
 CELERY_EVENT_SERIALIZER = "pickle"
+
+
+# PROVIDERS SECTION
+MELANGE_BASE_URL = getenv("MELANGE_BASE_URL", default="http://localhost:8001/api/orders")
+BUENO_BASE_URL = getenv("BUENO_BASE_URL", default="http://localhost:8002")
+UKLON_BASE_URL = getenv("UKLON_BASE_URL", default="http://localhost:8003/drivers/orders")
+UBER_BASE_URL = getenv("UBER_BASE_URL", default="http://localhost:8004/drivers/orders")

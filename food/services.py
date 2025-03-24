@@ -1,3 +1,4 @@
+import uuid
 from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import date, datetime, time
@@ -135,6 +136,7 @@ def melange_order_processing(internal_order_id: int):
             order_in_cache.restaurants[Restaurant.MELANGE]["status"] = "cooked"
 
         cache.set("orders", internal_order_id, order_in_cache)
+        order_in_cache.status = "cooked"
 
         if all_orders_cooked(order_in_cache):
             Order.objects.filter(id=internal_order_id).update(status=OrderStatus.COOKED)
@@ -187,10 +189,14 @@ def bueno_order_processing(internal_order_id: int):
 
         order_in_cache.restaurants[Restaurant.BUENO]["status"] = "cooked"
         cache.set("orders", internal_order_id, order_in_cache)
+        order_in_cache.status = "cooked"
 
         if all_orders_cooked(order_in_cache):
             Order.objects.filter(id=internal_order_id).update(status=OrderStatus.COOKED)
             print("🍳 UPDATED ORDER_Bueno IN DATABASE TO `COOKED`")
+
+
+
 
 
 @celery_app.task
@@ -221,10 +227,13 @@ def _delivery_order_task(internal_order_id: int):
 
     providers = [uklon.Provider, uber.Provider]
     provider_mark = random.choice(providers)
+
     if provider_mark == uklon.Provider:
         provider_name = uklon
+        Order.objects.filter(id=internal_order_id).update(provider="Uklon")
     elif provider_mark == uber.Provider:
         provider_name = uber
+        Order.objects.filter(id=internal_order_id).update(provider="Uber")
     else:
         raise ValueError("Unknown provider")
 
@@ -245,6 +254,9 @@ def _delivery_order_task(internal_order_id: int):
             )
 
     order_in_cache.location = _response.location
+    order_in_cache.status = "delivery"
+    order_in_cache.internal_order_id = internal_order_id
+    order_in_cache.external_id = str(uuid.uuid4())
 
     current_status = provider_name.OrderStatus.NOT_STARTED
     while current_status != provider_name.OrderStatus.DELIVERED:
@@ -273,6 +285,7 @@ def _delivery_order_task(internal_order_id: int):
     for rest in order_in_cache.restaurants.values():
         rest["status"] = provider_name.OrderStatus.DELIVERED
 
+    order_in_cache.status = "delivered"
     cache.set("orders", internal_order_id, order_in_cache)
 
 
@@ -319,9 +332,6 @@ def schedule_order(order: Order):
 
     assert type(order.eta) is date
 
-    # todo: remove
-    # _schedule_order(order)
-    # return None
 
     # 2025-03-06  -> 2025-03-06-00:00:00 UTC
     if order.eta == date.today():
