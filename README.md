@@ -45,7 +45,9 @@ cd Catering_service
 ### 2. Configure Environment Variables
 1. Create a `.env` file by copying the example file:
 ``` bash
-   cp .env.example .env
+   cp .env.default .env
+# configure environment
+# run application
 ```
 1. Edit the `.env` file to set up the environment variables, such as the database credentials. For example:
 ``` 
