@@ -12,6 +12,7 @@ services:
       - .:/app/
     depends_on:
       - worker
+      - database
 
 
   worker:
@@ -30,10 +31,10 @@ services:
   database:
     image: "postgres:17"
     container_name: catering-database
-#    environment:
-#      POSTGRES_USER: postgres
-#      POSTGRES_PASSWORD: postgres
-#      POSTGRES_DB: catering
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: catering
     env_file: ".env"
     ports:
       - "5435:5432"
