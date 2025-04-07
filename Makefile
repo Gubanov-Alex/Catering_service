@@ -16,8 +16,6 @@ worker:
 		watchmedo auto-restart --recursive --pattern='*.py' -- celery -A config worker -l INFO
 
 
-
-
 .PHONY: infra
 infra:
 	docker compose up -d database cache broker

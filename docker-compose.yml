@@ -5,7 +5,7 @@ services:
     # stdin_open: true
     # tty: true
     container_name: catering_api
-    env_file: ".env.default"
+    env_file: ".env"
     ports:
       - "8000:8000"
     volumes:
@@ -34,7 +34,7 @@ services:
 #      POSTGRES_USER: postgres
 #      POSTGRES_PASSWORD: postgres
 #      POSTGRES_DB: catering
-    env_file: ".env.default"
+    env_file: ".env"
     ports:
       - "5435:5432"
     volumes:
