@@ -121,7 +121,7 @@ DATABASES = {
         "USER": getenv("DATABASE_USER", "postgres"),
         "PASSWORD": getenv("DATABASE_PASSWORD", "postgres"),
         "HOST": getenv("DATABASE_HOST", "localhost"),
-        "PORT": getenv("DATABASE_PORT", 5435),
+        "PORT": getenv("DATABASE_PORT", 5432),
         # "ATOMIC_REQUESTS": False,
     }
 }
