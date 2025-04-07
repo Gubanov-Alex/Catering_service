@@ -15,7 +15,7 @@ RUN apt-get update -y \
 
 RUN pip install --upgrade pip setuptools pipenv watchdog
 
-COPY archiv/Pipfile .
+COPY Pipfile .
 COPY Pipfile.lock .
 RUN pipenv install --system --deploy
 
