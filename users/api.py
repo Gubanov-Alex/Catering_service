@@ -1,21 +1,18 @@
-from rest_framework import status, permissions, viewsets, routers
+from rest_framework import permissions, routers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 from users.service import Activator
 
-from .serializers import (
-    UserRegistratrionSerializer,
-    UserPublicSerializer,
-    UserActivationSerializer,
-    CustomTokenObtainPairSerializer,
+from .serializers import (CustomTokenObtainPairSerializer,
+                          UserActivationSerializer, UserPublicSerializer,
+                          UserRegistratrionSerializer)
 
-)
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
+
 
 class UserAPIViewSet(viewsets.GenericViewSet):
     # authentication_classes = [JWTAuthentication]
@@ -54,7 +51,6 @@ class UserAPIViewSet(viewsets.GenericViewSet):
         )
         service.send_user_activation_email(activation_key=activation_key)
 
-
         return Response(
             UserPublicSerializer(serializer.validated_data).data,
             status=status.HTTP_201_CREATED,
@@ -76,10 +72,6 @@ class UserAPIViewSet(viewsets.GenericViewSet):
 
         # serializer.validated_data
         return Response(data=None, status=status.HTTP_204_NO_CONTENT)
-
-
-
-
 
 
 router = routers.DefaultRouter()

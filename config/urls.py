@@ -16,21 +16,19 @@ Including another URLconf
 """
 
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import include, path
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 from food.api import bueno_webhook
 from food.api import router as food_router
-from users.api import router as users_router
 from users.api import CustomTokenObtainPairView
-
-
+from users.api import router as users_router
 
 urlpatterns = (
     [
         # USERS MANAGEMENT
         # ==================
-        path('grappelli/', include('grappelli.urls')),
+        path("grappelli/", include("grappelli.urls")),
         path("admin/", admin.site.urls),
         path("api/token/", CustomTokenObtainPairView.as_view()),
         path("webhooks/bueno/", bueno_webhook),

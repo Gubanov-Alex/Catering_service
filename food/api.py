@@ -1,4 +1,5 @@
 import json
+import logging
 
 from celery.result import AsyncResult
 from django.core.handlers.wsgi import WSGIRequest
@@ -10,19 +11,13 @@ from rest_framework.decorators import action, api_view
 from rest_framework.response import Response
 
 from shared.cache import CacheService
+
 from .enums import OrderStatus
 from .models import Dish, DishOrderItem, Order
 from .serializers import DishSerializer, OrderCreateSerializer
 from .services import schedule_order
 
-
-import logging
-
 logger = logging.getLogger(__name__)
-
-
-
-
 
 
 @csrf_exempt
@@ -33,11 +28,11 @@ def bueno_webhook(request):
     _order: dict = cache.get("orders", data["id"])
 
     _order.update(
-                {
-                    "status": data["status"],
-                    "external_id": data["id"],
-                }
-            )
+        {
+            "status": data["status"],
+            "external_id": data["id"],
+        }
+    )
     cache.set("orders", data["id"], _order)
 
     return JsonResponse({"message": "ok"})
@@ -109,6 +104,7 @@ class FoodAPIViewSet(viewsets.GenericViewSet):
         )
 
         # HTTP POST /food/orders/<ID>
+
     @action(methods=["get"], detail=False, url_path=r"orders/(?P<id>\d+)")
     def order_retrieve(self, request: WSGIRequest, id: int):
         order: Order = Order.objects.get(id=id)

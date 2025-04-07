@@ -9,9 +9,10 @@ https://docs.djangoproject.com/en/5.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
+
 from datetime import timedelta
-from pathlib import Path
 from os import getenv
+from pathlib import Path
 
 from django.conf.global_settings import EMAIL_BACKEND
 from django.core.mail.backends.smtp import EmailBackend
@@ -44,53 +45,52 @@ ALLOWED_HOSTS = ["*"]
 # Application definition
 
 INSTALLED_APPS = [
-    'grappelli',
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
+    "grappelli",
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
     # 3-rd party
-    'rest_framework',
-    'rest_framework_simplejwt',
-    #Custom
-    'food',
-    'logistic',
-    'users',
-    'shared',
+    "rest_framework",
+    "rest_framework_simplejwt",
+    # Custom
+    "food",
+    "logistic",
+    "users",
+    "shared",
 ]
 
 MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    "django.middleware.security.SecurityMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-ROOT_URLCONF = 'config.urls'
+ROOT_URLCONF = "config.urls"
 
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates']
-        ,
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [BASE_DIR / "templates"],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.debug",
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
             ],
         },
     },
 ]
 
-WSGI_APPLICATION = 'config.wsgi.application'
+WSGI_APPLICATION = "config.wsgi.application"
 
 
 # Database
@@ -132,22 +132,21 @@ DATABASES = {
 CACHE_CONNECTION_STRING = getenv("CACHE_URL", default="redis://localhost:6379/0")
 
 
-
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
 ]
 
@@ -165,9 +164,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
 
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = "UTC"
 
 USE_I18N = True
 
@@ -177,12 +176,12 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = "static/"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 
 # from rest_framework.permissions import DjangoModelPermissionsOrAnonReadOnly
@@ -201,8 +200,12 @@ REST_FRAMEWORK = {
 SIMPLE_JWT = {
     # "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
     # "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
-    "ACCESS_TOKEN_LIFETIME":getenv("ACCESS_TOKEN_LIFETIME",default=timedelta(minutes=60)),
-    "REFRESH_TOKEN_LIFETIME": getenv("REFRESH_TOKEN_LIFETIME",default=timedelta(days=1)),
+    "ACCESS_TOKEN_LIFETIME": getenv(
+        "ACCESS_TOKEN_LIFETIME", default=timedelta(minutes=60)
+    ),
+    "REFRESH_TOKEN_LIFETIME": getenv(
+        "REFRESH_TOKEN_LIFETIME", default=timedelta(days=1)
+    ),
     "UPDATE_LAST_LOGIN": False,
     "ALGORITHM": "HS256",
     "SIGNING_KEY": SECRET_KEY,
@@ -219,12 +222,13 @@ AUTH_USER_MODEL = "users.User"
 # EMAIL_HOST_USER = "mailpit"
 # EMAIL_HOST_PASSWORD = "mailpit"
 
-EMAIL_BACKEND = getenv("EMAIL_BACKEND",default="django.core.mail.backends.smtp.EmailBackend")
-EMAIL_HOST = getenv("EMAIL_HOST",default="localhost")
-EMAIL_PORT = getenv("EMAIL_PORT",default=1025)
-EMAIL_HOST_USER = getenv("EMAIL_HOST_USER",default="mailpit")
-EMAIL_HOST_PASSWORD = getenv("EMAIL_HOST_PASSWORD",default="mailpit")
-
+EMAIL_BACKEND = getenv(
+    "EMAIL_BACKEND", default="django.core.mail.backends.smtp.EmailBackend"
+)
+EMAIL_HOST = getenv("EMAIL_HOST", default="localhost")
+EMAIL_PORT = getenv("EMAIL_PORT", default=1025)
+EMAIL_HOST_USER = getenv("EMAIL_HOST_USER", default="mailpit")
+EMAIL_HOST_PASSWORD = getenv("EMAIL_HOST_PASSWORD", default="mailpit")
 
 
 # CELERY SECTION
@@ -237,7 +241,11 @@ CELERY_EVENT_SERIALIZER = "pickle"
 
 
 # PROVIDERS SECTION
-MELANGE_BASE_URL = getenv("MELANGE_BASE_URL", default="http://localhost:8001/api/orders")
+MELANGE_BASE_URL = getenv(
+    "MELANGE_BASE_URL", default="http://localhost:8001/api/orders"
+)
 BUENO_BASE_URL = getenv("BUENO_BASE_URL", default="http://localhost:8002")
-UKLON_BASE_URL = getenv("UKLON_BASE_URL", default="http://localhost:8003/drivers/orders")
+UKLON_BASE_URL = getenv(
+    "UKLON_BASE_URL", default="http://localhost:8003/drivers/orders"
+)
 UBER_BASE_URL = getenv("UBER_BASE_URL", default="http://localhost:8004/drivers/orders")

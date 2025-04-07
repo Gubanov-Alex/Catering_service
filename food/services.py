@@ -1,17 +1,17 @@
+import random
 import uuid
 from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import date, datetime, time
 from time import sleep
 from typing import Any
-import random
 
 from config import celery_app
 from shared.cache import CacheService
 
 from .enums import OrderStatus, Restaurant
 from .models import DishOrderItem, Order
-from .providers import bueno, melange, uklon, uber
+from .providers import bueno, melange, uber, uklon
 
 
 @dataclass
@@ -105,8 +105,9 @@ def melange_order_processing(internal_order_id: int):
                 order_in_cache.restaurants[Restaurant.MELANGE][
                     "external_id"
                 ] = response.id
-                Order.objects.filter(id=internal_order_id).update(external_order_id_melange=response.id)
-
+                Order.objects.filter(id=internal_order_id).update(
+                    external_order_id_melange=response.id
+                )
 
             else:
                 response: melange.OrderResponse = provider.get_order(
@@ -143,7 +144,6 @@ def melange_order_processing(internal_order_id: int):
             print("🍳 UPDATED ORDER_Melange IN DATABASE TO `COOKED`")
 
 
-
 @celery_app.task
 def bueno_order_processing(internal_order_id: int):
     provider = bueno.Provider()
@@ -170,7 +170,9 @@ def bueno_order_processing(internal_order_id: int):
         key=response.id,
         instance={"status": response.status, "internal_order_id": internal_order_id},
     )
-    Order.objects.filter(id=internal_order_id).update(external_order_id_bueno=response.id)
+    Order.objects.filter(id=internal_order_id).update(
+        external_order_id_bueno=response.id
+    )
     print("BUENO ORDER PROCESSED")
 
     while not cooked:
@@ -182,8 +184,8 @@ def bueno_order_processing(internal_order_id: int):
         print(f"BUENO ORDER STATUS: {bueno_order_in_cache.status}")
 
         if bueno_order_in_cache.status in (
-                bueno.OrderStatus.COOKED,
-                bueno.OrderStatus.FINISHED,
+            bueno.OrderStatus.COOKED,
+            bueno.OrderStatus.FINISHED,
         ):
             cooked = True
 
@@ -194,9 +196,6 @@ def bueno_order_processing(internal_order_id: int):
         if all_orders_cooked(order_in_cache):
             Order.objects.filter(id=internal_order_id).update(status=OrderStatus.COOKED)
             print("🍳 UPDATED ORDER_Bueno IN DATABASE TO `COOKED`")
-
-
-
 
 
 @celery_app.task
@@ -224,7 +223,6 @@ def delivery_order(internal_order_id: int):
 def _delivery_order_task(internal_order_id: int):
     """Using random provider - start processing delivery orders."""
 
-
     providers = [uklon.Provider, uber.Provider]
     provider_mark = random.choice(providers)
 
@@ -236,7 +234,6 @@ def _delivery_order_task(internal_order_id: int):
         Order.objects.filter(id=internal_order_id).update(provider="Uber")
     else:
         raise ValueError("Unknown provider")
-
 
     cache = CacheService()
 
@@ -250,8 +247,8 @@ def _delivery_order_task(internal_order_id: int):
         comments.append(f"ORDER: {rest['external_id']}")
 
     _response: provider_name.OrderResponse = provider_mark.create_order(
-                provider_name.OrderRequestBody(addresses=addresses, comments=comments)
-            )
+        provider_name.OrderRequestBody(addresses=addresses, comments=comments)
+    )
 
     order_in_cache.location = _response.location
     order_in_cache.status = "delivery"
@@ -261,7 +258,6 @@ def _delivery_order_task(internal_order_id: int):
     current_status = provider_name.OrderStatus.NOT_STARTED
     while current_status != provider_name.OrderStatus.DELIVERED:
         response = provider_mark.get_order(_response.id)
-
 
         if provider_name == uber:
             print(f"🚙 PROVIDER UBER  [{response.status}]: 📍 {response.location}")
@@ -287,7 +283,6 @@ def _delivery_order_task(internal_order_id: int):
 
     order_in_cache.status = "delivered"
     cache.set("orders", internal_order_id, order_in_cache)
-
 
 
 @celery_app.task
@@ -331,7 +326,6 @@ def schedule_order(order: Order):
     """Add the task to the queue for the future processing."""
 
     assert type(order.eta) is date
-
 
     # 2025-03-06  -> 2025-03-06-00:00:00 UTC
     if order.eta == date.today():

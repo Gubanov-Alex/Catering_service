@@ -27,7 +27,13 @@ class DishOrderItemInline(admin.TabularInline):
 
 @admin.register(Order)
 class DishesOrderAdmin(admin.ModelAdmin):
-    list_display = ("__str__", "id", "status","external_order_id_melange", "external_order_id_bueno")
+    list_display = (
+        "__str__",
+        "id",
+        "status",
+        "external_order_id_melange",
+        "external_order_id_bueno",
+    )
     inlines = (DishOrderItemInline,)
 
 

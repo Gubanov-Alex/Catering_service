@@ -137,7 +137,27 @@ pytest
 
 
 
-
+### DEPLOYMENT
+Set CI/CD
+code quality tools
+tests
+Select Cloud Provider
+Digital Ocean
+Rent instance (machine)
+Clone Project
+Infra:
+Native (bare metal)
+Machine with application
+Machine with worker (or same?)
+Database
+...
+Docker Infra
+Machine with Docker
+Select HTTP-serverssh Hillyl Catering Gubanov Alex
+security
+SSL Certificates
+Access to staticfiles
+Reverse Proxy
 
 
 ### Loading Test Data (Fixtures)

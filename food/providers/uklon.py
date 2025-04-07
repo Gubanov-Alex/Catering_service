@@ -31,8 +31,6 @@ class OrderResponse:
 class Provider:
     BASE_URL = UKLON_BASE_URL
 
-
-
     @classmethod
     def create_order(cls, order: OrderRequestBody):
         response: httpx.Response = httpx.post(cls.BASE_URL, json=asdict(order))

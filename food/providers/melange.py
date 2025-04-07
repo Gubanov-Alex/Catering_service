@@ -4,6 +4,7 @@ from dataclasses import asdict, dataclass
 import httpx
 
 from config.settings import MELANGE_BASE_URL
+
 from ._abc import RestaurantProvider
 
 

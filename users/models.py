@@ -1,8 +1,7 @@
-from django.db import models
-
-from django.contrib.auth.hashers import make_password
 from django.contrib.auth.base_user import BaseUserManager
+from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
+from django.db import models
 
 from .enums import Role
 
@@ -28,7 +27,6 @@ class UserManager(BaseUserManager):
 
         email = self.normalize_email(email)
         password = make_password(password)
-
 
         extra_fields["is_staff"] = True
         extra_fields["is_superuser"] = True

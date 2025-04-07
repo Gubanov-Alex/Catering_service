@@ -1,6 +1,6 @@
 from rest_framework import serializers
-from .models import Dish, Restaurant
 
+from .models import Dish, Restaurant
 
 
 class DishSerializer(serializers.ModelSerializer):
@@ -10,6 +10,7 @@ class DishSerializer(serializers.ModelSerializer):
         model = Dish
         fields = "__all__"
 
+
 class RestaurantSerializer(serializers.ModelSerializer):
     dishes = DishSerializer(many=True, write_only=True)
 
@@ -18,16 +19,18 @@ class RestaurantSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
     def create(self, validated_data):
-        dishes_data = validated_data.pop('dishes', [])
+        dishes_data = validated_data.pop("dishes", [])
         restaurant = Restaurant.objects.create(**validated_data)
         for dish_data in dishes_data:
             Dish.objects.create(restaurant=restaurant, **dish_data)
         return restaurant
 
+
 class RestaurantWithoutDishesSerializer(serializers.ModelSerializer):
     class Meta:
         model = Restaurant
-        fields = ['id', 'name', 'address']
+        fields = ["id", "name", "address"]
+
 
 class DishOrderSerializer(serializers.Serializer):
     dish = serializers.PrimaryKeyRelatedField(queryset=Dish.objects.all())

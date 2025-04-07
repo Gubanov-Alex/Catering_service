@@ -9,15 +9,16 @@
 
 
 import uuid
-from django.core.mail import send_mail
+
 from django.contrib.auth import get_user_model
+from django.core.mail import send_mail
+
 from config import celery_app
-
 from shared.cache import CacheService
-
 
 User = get_user_model()
 CACHE: dict[uuid.UUID, dict] = {}
+
 
 @celery_app.task
 def send_activation_mail(email: str, activation_link: str):
@@ -27,6 +28,7 @@ def send_activation_mail(email: str, activation_link: str):
         from_email="admin@catering.support.com",
         recipient_list=[email],
     )
+
 
 class Activator:
     UUID_NAMESPACE = uuid.uuid4()
@@ -47,8 +49,7 @@ class Activator:
         if self.email is None:
             raise ValueError("Email is not specified for activation email sending")
         else:
-           send_activation_mail.delay(email=self.email,activation_link=link)
-
+            send_activation_mail.delay(email=self.email, activation_link=link)
 
     def save_activation_information(self, user_id: int, activation_key: uuid.UUID):
         """Save activation information to the cache.

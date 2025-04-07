@@ -22,6 +22,10 @@ worker:
 infra:
 	docker compose up -d database cache broker
 
+.PHONY: prod
+prod:
+	docker compose up -d api
+
 .PHONY: bueno
 bueno:
 	uvicorn tests.providers.bueno:app --reload --port 8002
@@ -37,3 +41,20 @@ uber:
 .PHONY: uklon
 uklon:
 	uvicorn tests.providers.uklon:app --reload --port 8003
+
+
+# ==================================================
+# CODE QUALITY
+# ==================================================
+.PHONY: check
+check:
+	black --check ./
+	isort --check ./
+	flake8 ./
+	mypy ./
+
+
+.PHONY: quality
+quality:
+	black ./
+	isort ./

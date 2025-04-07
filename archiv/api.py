@@ -1,11 +1,14 @@
 from django.core.handlers.wsgi import WSGIRequest
-from rest_framework import status, viewsets, routers
+from rest_framework import routers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from .models import Dish, DishOrderItem, Order, Restaurant
-from .serializers import DishSerializer, OrderCreateSerializer, RestaurantSerializer, RestaurantWithoutDishesSerializer
 from .enums import OrderStatus
+from .models import Dish, DishOrderItem, Order, Restaurant
+from .serializers import (DishSerializer, OrderCreateSerializer,
+                          RestaurantSerializer,
+                          RestaurantWithoutDishesSerializer)
+
 
 # ========== Food =======================
 class FoodAPIViewSet(viewsets.GenericViewSet):
