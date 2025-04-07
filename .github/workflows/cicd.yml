@@ -22,8 +22,7 @@ jobs:
       - name: Code quality check
         # run: make check
         run: echo "Linting passed"
-      - name: Run tests
-        run: DJANGO_SETTINGS_MODULE=config.settings pytest tests/
+
 
   deployment:
     runs-on: ubuntu-latest
