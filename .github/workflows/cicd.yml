@@ -1,9 +1,10 @@
 name: "Code quality check and Deploy"
 
+
 on:
   push:
     branches:
-      - main
+      - master
   # pull_request:
   #   branches:
   #     - main
